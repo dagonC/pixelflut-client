@@ -6,10 +6,20 @@ import os.path
 import threading
 import socket
 import sys
+import yaml
 from PIL import Image
 
-HOST = '151.217.47.77'
-PORT = 8080
+config = []
+with open("config.yml", 'r') as stream:
+    try:
+        config = yaml.load(stream)
+    except yaml.YAMLError as exc:
+        print(exc)
+
+#HOST = '151.217.47.77'
+HOST = config['host']
+#PORT = 8080
+PORT = config['port']
 
 def pixel(sock, x, y, r, g, b, a=255):
     if a == 255:
@@ -69,8 +79,10 @@ if inputFileName == '':
 
 print('Sending ' + inputFileName + ' via ' + sys.argv[2] + ' threads')
 
+
+
 im = Image.open(inputFileName).convert('RGB')
-im.thumbnail((100, 100), Image.ANTIALIAS)
+im.thumbnail((config['imageWidth'], config['imageHeight']), Image.ANTIALIAS)
 launchThreaded(int(sys.argv[2]))
 
 
