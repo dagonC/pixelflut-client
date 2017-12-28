@@ -70,7 +70,7 @@ def launchThreaded(numberOfThreads, serverScreenSize):
         print("Error: unable to start thread")
 
 def printUsage():
-    print('Usage: pixelflut')
+    print('Usage: pixelflut <pos-x> <pos-y>')
 
 def crop(im,height,width):
     imgwidth, imgheight = im.size
@@ -92,8 +92,8 @@ def launchTiled(tiles, imageWidth, imageHeight, tileWidth, tileHeight, serverScr
     threads = []
     x = 0
     y = 0
-    baseOffsetX = 0
-    baseOffsetY = int(serverScreenSize[1]) - imageHeight
+    baseOffsetX = DRAW_OFFSET_X
+    baseOffsetY = DRAW_OFFSET_Y
     for tileCount in range(0, len(tiles)):
         imageTile = tiles[tileCount]
         if (tileWidth + x) > imageWidth:
@@ -105,7 +105,7 @@ def launchTiled(tiles, imageWidth, imageHeight, tileWidth, tileHeight, serverScr
         threads.append(t)
         t.start()
 
-if len(sys.argv) > 1:
+if len(sys.argv) != 3:
     printUsage()
     sys.exit()
 
@@ -118,6 +118,8 @@ with open("config.yml", 'r') as stream:
 
 HOST = config['host']
 PORT = config['port']
+DRAW_OFFSET_X = int(sys.argv[1])
+DRAW_OFFSET_Y = int(sys.argv[2])
 
 print('Sending ' + config['file'] + ' to ...')
 print(' host:             ' + config['host'] + ':' + str(config['port']))
