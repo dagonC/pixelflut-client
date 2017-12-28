@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+
 import random
 import sys
 import os.path
 import threading
 import socket
+import sys
 from PIL import Image
 
 HOST = '151.217.47.77'
@@ -50,17 +53,24 @@ def launchThreaded(numberOfThreads):
     #except:
      #   print("Error: unable to start thread")
 
-if len(sys.argv) != 2:
-    exit
+def printUsage():
+    print('Usage: pixelflut <PATH-TO-PNG-FILE-TO-SEND> <NUMBER-OF-THREADS>')
+    print('       <PATH-TO-PNG-FILE-TO-SEND>:   full path to the image file to be sent')
+    print('       <NUMBER-OF-THREADS>:          number of threads to send images in parallel')
+
+if len(sys.argv) < 2:
+    printUsage()
+    sys.exit()
 
 inputFileName = sys.argv[1]
 if inputFileName == '':
-    exit
+    printUsage()
+    sys.exit()
+
 print('Sending ' + inputFileName + ' via ' + sys.argv[2] + ' threads')
 
 im = Image.open(inputFileName).convert('RGB')
 im.thumbnail((100, 100), Image.ANTIALIAS)
-#writePixelFlutImage("Bla", im)
 launchThreaded(int(sys.argv[2]))
 
 
