@@ -130,7 +130,7 @@ im.thumbnail((config['imageWidth'], config['imageHeight']), Image.ANTIALIAS)
 tileWidth=config['tileWidth']
 tileHeight=config['tileHeight']
 tiles = getImageTiles(im, tileWidth, tileHeight)
-print(' via ' + (str(len(tiles))) + ' tiles')
+print('using ' + (str(len(tiles))) + ' tiles (' + str(config['tileWidth']) + 'x' + str(config['tileHeight']) + ')')
 
 launchTiled(tiles, config['imageWidth'], config['imageHeight'], tileWidth, tileHeight, serverScreenSize)
 
