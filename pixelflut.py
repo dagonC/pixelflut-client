@@ -17,7 +17,7 @@ def pixel(sock, x, y, r, g, b, a=255):
         sock.send('PX %d %d %02x%02x%02x%02x\n' % (x, y, r, g, b, a))
 
 def getSize(config):
-    sock = getNewSocket(config['host'], config['port'])
+    sock = getNewSocket(config['server']['host'], config['server']['port'])
     sock.send('SIZE\n')
     data = sock.recv(1024)
     sock.close()
@@ -114,8 +114,9 @@ with open("config.yml", 'r') as stream:
     except yaml.YAMLError as exc:
         print(exc)
 
-HOST = config['host']
-PORT = config['port']
+serverConfig = config['server']
+HOST = serverConfig['host']
+PORT = serverConfig['port']
 DRAW_OFFSET_X = int(sys.argv[1])
 DRAW_OFFSET_Y = int(sys.argv[2])
 
@@ -125,20 +126,20 @@ TRANSPARENT_R = int(tranparencyConfig['transparentR'])
 TRANSPARENT_G = int(tranparencyConfig['transparentG'])
 TRANSPARENT_B = int(tranparencyConfig['transparentB'])
 
-print('Sending ' + config['file'] + ' to ...')
-print(' host:             ' + config['host'] + ':' + str(config['port']))
+print('Sending ' + config['image']['file'] + ' to ...')
+print(' host:             ' + serverConfig['host'] + ':' + str(serverConfig['port']))
 serverScreenSize = getSize(config)
 print(' host screen size: ' + serverScreenSize[0] + 'x' + serverScreenSize[1])
 
-im = Image.open(config['file']).convert('RGB')
-im.thumbnail((config['imageWidth'], config['imageHeight']), Image.ANTIALIAS)
+im = Image.open(config['image']['file']).convert('RGB')
+im.thumbnail((config['image']['imageWidth'], config['image']['imageHeight']), Image.ANTIALIAS)
 
-tileWidth=config['tileWidth']
-tileHeight=config['tileHeight']
+tileWidth=config['tiles']['tileWidth']
+tileHeight=config['tiles']['tileHeight']
 tiles = getImageTiles(im, tileWidth, tileHeight)
-print('using ' + (str(len(tiles))) + ' tiles (' + str(config['tileWidth']) + 'x' + str(config['tileHeight']) + ')')
+print('using ' + (str(len(tiles))) + ' tiles (' + str(config['tiles']['tileWidth']) + 'x' + str(config['tiles']['tileHeight']) + ')')
 
-launchTiled(tiles, config['imageWidth'], config['imageHeight'], tileWidth, tileHeight, serverScreenSize)
+launchTiled(tiles, config['image']['imageWidth'], config['image']['imageHeight'], tileWidth, tileHeight, serverScreenSize)
 
 
 
