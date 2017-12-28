@@ -9,15 +9,6 @@ import sys
 import yaml
 from PIL import Image
 
-config = []
-with open("config.yml", 'r') as stream:
-    try:
-        config = yaml.load(stream)
-    except yaml.YAMLError as exc:
-        print(exc)
-
-HOST = config['host']
-PORT = config['port']
 
 def pixel(sock, x, y, r, g, b, a=255):
     if a == 255:
@@ -25,9 +16,11 @@ def pixel(sock, x, y, r, g, b, a=255):
     else:
         sock.send('PX %d %d %02x%02x%02x%02x\n' % (x, y, r, g, b, a))
 
-def getSize(sock):
+def getSize(config):
+    sock = getNewSocket(config['host'], config['port'])
     sock.send('SIZE\n')
     data = sock.recv(1024)
+    sock.close()
     rawData = data.replace('\n', '').split(' ')
     rawData.remove('SIZE')
     return rawData
@@ -60,42 +53,87 @@ def writePixelFlutImage(threadName, im, serverScreenSize):
     while True:
         writeImage(random.randint(0, int(serverScreenSize[0]) - w), random.randint(0, int(serverScreenSize[1]) - h), im)
 
+def writePixelFlutImageTile(threadName, im, x, y):
+    print(threadName + ' x.y = ' + str(x) + '.' + str(y))
+    _, _, w, h = im.getbbox()
+    while True:
+        writeImage(x, y, im)
 
 def launchThreaded(numberOfThreads, serverScreenSize):
     threads = []
     try:
-        for x in range(0, numberOfThreads):
-            t = threading.Thread(target=writePixelFlutImage, args=("Launched thread #" + str(x), im, serverScreenSize))
+        for threadCount in range(0, numberOfThreads):
+            t = threading.Thread(target=writePixelFlutImage, args=("Launched thread #" + str(threadCount), im, serverScreenSize))
             threads.append(t)
             t.start()
     except:
         print("Error: unable to start thread")
 
 def printUsage():
-    print('Usage: pixelflut <PATH-TO-PNG-FILE-TO-SEND> <NUMBER-OF-THREADS>')
-    print('       <PATH-TO-PNG-FILE-TO-SEND>:   full path to the image file to be sent')
-    print('       <NUMBER-OF-THREADS>:          number of threads to send images in parallel')
+    print('Usage: pixelflut')
 
-if len(sys.argv) < 2:
+def crop(im,height,width):
+    imgwidth, imgheight = im.size
+    for i in range(imgheight//height):
+        for j in range(imgwidth//width):
+            box = (j*width, i*height, (j+1)*width, (i+1)*height)
+            yield im.crop(box)
+
+def getImageTiles(im, tileWidth, tileHeight):
+    tiles = []
+    start_num = 0
+    for k, piece in enumerate(crop(im, tileHeight, tileWidth), start_num):
+        imageTile = Image.new('RGB', (tileHeight, tileWidth), 255)
+        imageTile.paste(piece)
+        tiles.append(imageTile)
+    return tiles
+
+def launchTiled(tiles, imageWidth, imageHeight, tileWidth, tileHeight, serverScreenSize):
+    threads = []
+    x = 0
+    y = 0
+    baseOffsetX = 0
+    baseOffsetY = int(serverScreenSize[1]) - imageHeight
+    for tileCount in range(0, len(tiles)):
+        imageTile = tiles[tileCount]
+        if (tileWidth + x) > imageWidth:
+            y = (tileHeight + y)
+            x = 0
+        x = (tileWidth + x)
+        t = threading.Thread(target=writePixelFlutImageTile,
+                             args=("Launched thread for tile #" + str(tileCount), imageTile, x + baseOffsetX, y + baseOffsetY))
+        threads.append(t)
+        t.start()
+
+if len(sys.argv) > 1:
     printUsage()
     sys.exit()
 
-inputFileName = sys.argv[1]
-if inputFileName == '':
-    printUsage()
-    sys.exit()
+config = []
+with open("config.yml", 'r') as stream:
+    try:
+        config = yaml.load(stream)
+    except yaml.YAMLError as exc:
+        print(exc)
 
-numberOfThreads = int(sys.argv[2])
+HOST = config['host']
+PORT = config['port']
 
-print('Sending ' + inputFileName + ' via ' + sys.argv[2] + ' threads')
+print('Sending ' + config['file'] + ' to ...')
+print(' host:             ' + config['host'] + ':' + str(config['port']))
+serverScreenSize = getSize(config)
+print(' host screen size: ' + serverScreenSize[0] + 'x' + serverScreenSize[1])
 
-sizeSock = getNewSocket(config['host'], config['port'])
-size = getSize(sizeSock)
-sizeSock.close()
-
-im = Image.open(inputFileName).convert('RGB')
+im = Image.open(config['file']).convert('RGB')
 im.thumbnail((config['imageWidth'], config['imageHeight']), Image.ANTIALIAS)
-launchThreaded(numberOfThreads, size)
+
+tileWidth=config['tileWidth']
+tileHeight=config['tileHeight']
+tiles = getImageTiles(im, tileWidth, tileHeight)
+print(' via ' + (str(len(tiles))) + ' tiles')
+
+launchTiled(tiles, config['imageWidth'], config['imageHeight'], tileWidth, tileHeight, serverScreenSize)
+
 
 
 

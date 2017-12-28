@@ -1,6 +1,9 @@
 host: "151.217.47.77"
 port: 8080
-screenWidth: 1024
-screenHeight: 1024
+width: 1024
+height: 1024
 imageWidth: 100
 imageHeight: 100
+tileWidth: 25
+tileHeight: 25
+file: "/home/arthur/workspace/pixelflut2/k4.png"
