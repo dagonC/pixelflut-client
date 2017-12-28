@@ -16,9 +16,7 @@ with open("config.yml", 'r') as stream:
     except yaml.YAMLError as exc:
         print(exc)
 
-#HOST = '151.217.47.77'
 HOST = config['host']
-#PORT = 8080
 PORT = config['port']
 
 def pixel(sock, x, y, r, g, b, a=255):
@@ -27,6 +25,12 @@ def pixel(sock, x, y, r, g, b, a=255):
     else:
         sock.send('PX %d %d %02x%02x%02x%02x\n' % (x, y, r, g, b, a))
 
+def getSize(sock):
+    sock.send('SIZE\n')
+    data = sock.recv(1024)
+    rawData = data.replace('\n', '').split(' ')
+    rawData.remove('SIZE')
+    return rawData
 
 def worm(x, y, n, r, g, b):
     while n:
@@ -35,6 +39,10 @@ def worm(x, y, n, r, g, b):
         y += random.randint(0, 2) - 1
         n -= 1
 
+def getNewSocket(host, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((host, port))
+    return sock
 
 def writeImage(offsetX, offsetY, im):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -46,22 +54,22 @@ def writeImage(offsetX, offsetY, im):
             pixel(sock, x + offsetX, y + offsetY, r, g, b)
 
 
-def writePixelFlutImage(threadName, im):
+def writePixelFlutImage(threadName, im, serverScreenSize):
     print(threadName)
+    _, _, w, h = im.getbbox()
     while True:
-        writeImage(random.randint(0, 924), random.randint(0, 924), im)
+        writeImage(random.randint(0, int(serverScreenSize[0]) - w), random.randint(0, int(serverScreenSize[1]) - h), im)
 
 
-def launchThreaded(numberOfThreads):
+def launchThreaded(numberOfThreads, serverScreenSize):
     threads = []
-    #try:
-    for x in range(0, numberOfThreads):
-        #thread.start_new_thread(writePixelFlutImage, ("Launched thread " + str(x), im,))
-        t = threading.Thread(target=writePixelFlutImage, args=("Launched thread #" + str(x), im))
-        threads.append(t)
-        t.start()
-    #except:
-     #   print("Error: unable to start thread")
+    try:
+        for x in range(0, numberOfThreads):
+            t = threading.Thread(target=writePixelFlutImage, args=("Launched thread #" + str(x), im, serverScreenSize))
+            threads.append(t)
+            t.start()
+    except:
+        print("Error: unable to start thread")
 
 def printUsage():
     print('Usage: pixelflut <PATH-TO-PNG-FILE-TO-SEND> <NUMBER-OF-THREADS>')
@@ -77,13 +85,17 @@ if inputFileName == '':
     printUsage()
     sys.exit()
 
+numberOfThreads = int(sys.argv[2])
+
 print('Sending ' + inputFileName + ' via ' + sys.argv[2] + ' threads')
 
-
+sizeSock = getNewSocket(config['host'], config['port'])
+size = getSize(sizeSock)
+sizeSock.close()
 
 im = Image.open(inputFileName).convert('RGB')
 im.thumbnail((config['imageWidth'], config['imageHeight']), Image.ANTIALIAS)
-launchThreaded(int(sys.argv[2]))
+launchThreaded(numberOfThreads, size)
 
 
 
