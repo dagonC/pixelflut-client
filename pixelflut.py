@@ -25,13 +25,6 @@ def getSize(config):
     rawData.remove('SIZE')
     return rawData
 
-def worm(x, y, n, r, g, b):
-    while n:
-        pixel(x, y, r, g, b, 25)
-        x += random.randint(0, 2) - 1
-        y += random.randint(0, 2) - 1
-        n -= 1
-
 def getNewSocket(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((host, port))
@@ -44,7 +37,12 @@ def writeImage(offsetX, offsetY, im):
     for x in xrange(w):
         for y in xrange(h):
             r, g, b = im.getpixel((x, y))
-            pixel(sock, x + offsetX, y + offsetY, r, g, b)
+            if TRANSPARENCY:
+                if r != TRANSPARENT_R or g != TRANSPARENT_G or b != TRANSPARENT_B:
+                    pixel(sock, x + offsetX, y + offsetY, r, g, b)
+            else:
+                pixel(sock, x + offsetX, y + offsetY, r, g, b)
+    sock.close()
 
 
 def writePixelFlutImage(threadName, im, serverScreenSize):
@@ -120,6 +118,12 @@ HOST = config['host']
 PORT = config['port']
 DRAW_OFFSET_X = int(sys.argv[1])
 DRAW_OFFSET_Y = int(sys.argv[2])
+
+tranparencyConfig = config['transparency']
+TRANSPARENCY = bool(tranparencyConfig['enabled'])
+TRANSPARENT_R = int(tranparencyConfig['transparentR'])
+TRANSPARENT_G = int(tranparencyConfig['transparentG'])
+TRANSPARENT_B = int(tranparencyConfig['transparentB'])
 
 print('Sending ' + config['file'] + ' to ...')
 print(' host:             ' + config['host'] + ':' + str(config['port']))

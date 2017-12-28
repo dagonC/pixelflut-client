@@ -7,3 +7,8 @@ imageHeight: 100
 tileWidth: 15
 tileHeight: 15
 file: "/home/arthur/workspace/pixelflut2/k4.png"
+transparency:
+    enabled: true
+    transparentR: 0
+    transparentG: 0
+    transparentB: 0
