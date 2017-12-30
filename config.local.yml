@@ -1,0 +1,15 @@
+server:
+  host: "127.0.0.1"
+  port: 8181
+image:
+  imageWidth: 100
+  imageHeight: 100
+  file: "/home/arthur/workspace/pixelflut2/k4.png"
+tiles:
+  tileWidth: 15
+  tileHeight: 15
+transparency:
+  enabled: true
+  transparentR: 255
+  transparentG: 255
+  transparentB: 255
